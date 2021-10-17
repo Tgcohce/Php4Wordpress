@@ -1,30 +1,42 @@
 <?php
-add_action( 'woocommerce_thankyou', 'bbloomer_redirectcustom');
-function bbloomer_redirectcustom( $order_id ){
-    $order = wc_get_order( $order_id );
-    $url = 'thank-you-page-url';
-    if ( ! $order->has_status( 'failed' ) ) {
-        wp_safe_redirect( $url );
-        exit;
-    }
+
+# Objective is to block any direct access from reaching the thank you page
+# We have a sensitive thank you form we have to protect
+add_action( 'template_redirect', 'woocommerce_redirect_after_checkout' );
+
+function woocommerce_redirect_after_checkout() {
+global $wp;
+    
+    # Making sure and order is made
+
+if ( is_checkout() && ! empty( $wp->query_vars['order-received'] ) ) {
+
+	$redirect_url = 'https://example.com/thank-you/';
+
+	wp_redirect($redirect_url );
+
+	exit;
+}
+
 }
 
 add_action('template_redirect', function() {
-    // If user is in thank you page dont take action
-    if (!is_page('thank-you')) {
+    // ID of the page we are redirecting
+    if (!is_page(12345)) {
         return;
     }
 
-    // The proper page the user has to be coming from
-    if (wp_get_referer() === 'url/if-coming-from-this-page-no-problem') {
+    // coming from the checkout, so all is fine
+    if (wp_get_referer() === 'https://www.example.com//checkout/') {
         return;
     }
 
-    // we are on thank you page
-    // user is not coming from the proper pipeline
-    // redirect  	
-    wp_redirect('url/page-to-be-redirected');
+    
+    // direct access tried, redirect to home
+    wp_redirect(get_home_url());
     exit;
 } );
+
+
 
 ?>
